@@ -2,7 +2,9 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 require_once APPPATH . '/libraries/REST_Controller.php';
+require_once APPPATH . '/libraries/JWT.php';
 
+use \Firebase\JWT\JWT;
 
 /**
  *
@@ -90,14 +92,40 @@ class Kontak extends REST_Controller
       }
       public function login_post()
       {
+          $username = $this->post('username');
+          $password = $this->post('password');
+          $id     = $this->post('id');
+          $this->db->where('username', $username);
+          $query= $this->db->get('telepon');
 
-        $password = $this->post('password');
-        $query = $this->db->where('password',$password);
-         if($query){
-           $this->response(array('status' => 'success'), 201);
-         }
+          //$query = $this->db->query("SELECT * FROM telepon WHERE username = '$username'");
 
-        # code...
+          //$result = mysqli_query($connect, $query);
+          if($query->num_rows() > 0)
+          {
+
+               $row = $query->row();
+                    if(password_verify($password, $row->password))
+                    {
+
+                      $token['id'] = $id;
+                      $output['id_token']   = JWT::encode($token,"my secret key");
+                      $this->response($output,REST_Controller::HTTP_OK);
+
+
+                    }
+                    else
+                    {
+                        $this->response(array('status' => 'fail', 502));
+                    }
+
+          }
+          else
+          {
+              $this->response(array('status' => 'fail', 502));
+          }
+
+
       }
 
 }
